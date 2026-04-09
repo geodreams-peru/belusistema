@@ -1,0 +1,135 @@
+<!-- ══════════════ MÓDULO ERRORES ══════════════ -->
+
+<div class="mod-tabs">
+  <button class="mod-tab active" onclick="erroresTab('lista')">📋 Registros</button>
+  <button class="mod-tab" onclick="erroresTab('stats')">📊 Estadísticas</button>
+</div>
+
+<!-- ── LISTA ── -->
+<div class="errores-section active" id="errores-lista">
+  <div class="section-header">
+    <h2>Registro de Errores</h2>
+    <button class="btn btn-primary btn-sm" onclick="erroresNuevo()">+ Nuevo Error</button>
+  </div>
+
+  <!-- Formulario -->
+  <div class="form-card" id="erroresForm" style="display:none;margin-bottom:22px">
+    <h3 id="erroresFormTitulo">Nuevo Error</h3>
+    <input type="hidden" id="eId">
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>Fecha *</label>
+        <input type="date" id="eFecha">
+      </div>
+      <div class="form-group">
+        <label>Sección</label>
+        <select id="eSeccion">
+          <option value="">-- Sin sección --</option>
+          <option>Cocina</option>
+          <option>Caja</option>
+          <option>Salón</option>
+          <option>Delivery</option>
+          <option>Almacén</option>
+          <option>Administración</option>
+          <option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Nombre del responsable *</label>
+      <input type="text" id="eNombre" placeholder="Nombre de quien cometió el error">
+    </div>
+    <div class="form-group">
+      <label>Descripción del error *</label>
+      <textarea id="eDescripcion" rows="3" placeholder="Describí qué pasó..." style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Solución / Acción tomada</label>
+      <textarea id="eSolucion" rows="2" placeholder="¿Cómo se resolvió?" style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="eResuelto" style="width:auto;margin-right:8px"> Marcar como resuelto</label>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary btn-block" onclick="erroresGuardar()">Guardar</button>
+      <button class="btn btn-secondary btn-sm" onclick="erroresCancelar()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-bar errores-filter-row" style="margin-bottom:18px">
+    <input type="date" id="eDesde">
+    <input type="date" id="eHasta">
+    <input type="text" id="eFiltNombre" placeholder="Nombre..." style="max-width:160px">
+    <select id="eFiltSeccion" style="max-width:160px">
+      <option value="">Todas las secciones</option>
+      <option>Cocina</option>
+      <option>Caja</option>
+      <option>Salón</option>
+      <option>Delivery</option>
+      <option>Almacén</option>
+      <option>Administración</option>
+      <option>Otro</option>
+    </select>
+    <select id="eFiltResuelto" style="max-width:150px">
+      <option value="">Todos</option>
+      <option value="0">Pendientes</option>
+      <option value="1">Resueltos</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="erroresCargar()">Filtrar</button>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaErrores">
+      <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── STATS ── -->
+<div class="errores-section" id="errores-stats">
+  <div class="section-header"><h2>Estadísticas</h2></div>
+
+  <div class="cards-grid" style="margin-bottom:25px">
+    <div class="card card-primary">
+      <div class="card-icon">📋</div>
+      <div class="card-content"><p class="card-label">Total registros</p><h3 class="card-value" id="eStTotal">—</h3></div>
+    </div>
+    <div class="card card-danger">
+      <div class="card-icon">⚠️</div>
+      <div class="card-content"><p class="card-label">Sin resolver</p><h3 class="card-value" id="eStPendientes">—</h3></div>
+    </div>
+    <div class="card card-warning">
+      <div class="card-icon">📅</div>
+      <div class="card-content"><p class="card-label">Este mes</p><h3 class="card-value" id="eStMes">—</h3></div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3 style="margin-bottom:16px">Por Sección (este mes)</h3>
+    <div id="eStPorSeccion"><p class="text-muted" style="font-size:.88em">Sin datos</p></div>
+  </div>
+</div>
+
+<style>
+.errores-section        { display:none; animation:fadeIn .35s ease; }
+.errores-section.active { display:block; }
+.badge-pendiente { background:rgba(255,107,107,.15); color:var(--danger); padding:3px 8px; border-radius:20px; font-size:.78em; font-weight:600; }
+.badge-resuelto  { background:rgba(86,208,142,.15);  color:var(--success); padding:3px 8px; border-radius:20px; font-size:.78em; font-weight:600; }
+
+.errores-filter-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.errores-filter-row input,
+.errores-filter-row select,
+.errores-filter-row .btn {
+  width: auto;
+  flex: 0 0 auto;
+}
+</style>

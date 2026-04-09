@@ -1,0 +1,293 @@
+<!-- ══════════════ MÓDULO CONTABILIDAD ══════════════ -->
+
+<!-- Sub-navegación -->
+<div class="mod-tabs" id="contaTabs">
+  <button class="mod-tab active" onclick="contaTab('dashboard')">📊 Dashboard</button>
+  <button class="mod-tab" onclick="contaTab('ventas')">💰 Ventas</button>
+  <button class="mod-tab" onclick="contaTab('gastos')">📉 Gastos</button>
+  <button class="mod-tab" onclick="contaTab('balance')">⚖️ Balance</button>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div class="conta-section active" id="conta-dashboard">
+
+  <div class="filter-bar">
+    <select id="dashMes" onchange="contaDashboard()">
+      <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+      <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+      <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="dashAnio" style="width:82px" min="2020" max="2099" onchange="contaDashboard()">
+    <button class="btn btn-secondary btn-sm" onclick="contaLimpiarFiltro('dashboard')">Limpiar</button>
+  </div>
+
+  <div class="cards-grid" style="margin-top:20px">
+    <div class="card card-primary">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <p class="card-label">Total Ventas</p>
+        <h3 class="card-value" id="dashTotalVentas">S/. 0.00</h3>
+        <p class="card-detail" id="dashCantVentas">0 registros</p>
+      </div>
+    </div>
+    <div class="card card-danger">
+      <div class="card-icon">📉</div>
+      <div class="card-content">
+        <p class="card-label">Total Gastos</p>
+        <h3 class="card-value" id="dashTotalGastos">S/. 0.00</h3>
+        <p class="card-detail" id="dashCantGastos">0 registros</p>
+      </div>
+    </div>
+    <div class="card card-warning">
+      <div class="card-icon">👥</div>
+      <div class="card-content">
+        <p class="card-label">Nómina</p>
+        <h3 class="card-value" id="dashNomina">S/. 0.00</h3>
+        <p class="card-detail">Sueldos del período</p>
+      </div>
+    </div>
+    <div class="card card-success">
+      <div class="card-icon">📈</div>
+      <div class="card-content">
+        <p class="card-label">Utilidad Neta</p>
+        <h3 class="card-value" id="dashUtilidad">S/. 0.00</h3>
+        <p class="card-detail" id="dashMargen">Margen: 0%</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-top:5px">
+    <h3>Desglose de Ingresos</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:12px">
+      <div><p class="card-label">Efectivo</p><p class="text-success" style="font-size:1.2em;font-weight:700" id="dashEfectivo">S/. 0.00</p></div>
+      <div><p class="card-label">Tarjeta</p><p class="text-primary" style="font-size:1.2em;font-weight:700" id="dashTarjeta">S/. 0.00</p></div>
+      <div><p class="card-label">Mixto</p><p class="text-warning" style="font-size:1.2em;font-weight:700" id="dashMixto">S/. 0.00</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VENTAS ── -->
+<div class="conta-section" id="conta-ventas">
+  <div class="section-header">
+    <h2>Ventas</h2>
+    <span class="section-subtitle">Registrá los ingresos del día</span>
+  </div>
+  <div class="content-grid">
+
+    <div class="form-card">
+      <h3 id="ventaFormTitulo">Nueva Venta</h3>
+      <input type="hidden" id="ventaEditId">
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="ventaFecha" required>
+      </div>
+      <div class="form-group-row">
+        <div class="form-group">
+          <label>Efectivo (S/.)</label>
+          <input type="number" id="ventaEfectivo" step="0.01" min="0" value="0" oninput="contaPreviewTotal()">
+        </div>
+        <div class="form-group">
+          <label>Tarjeta (S/.)</label>
+          <input type="number" id="ventaTarjeta" step="0.01" min="0" value="0" oninput="contaPreviewTotal()">
+        </div>
+      </div>
+      <div class="form-group-row">
+        <div class="form-group">
+          <label>Mixto Efectivo</label>
+          <input type="number" id="ventaMixtoEf" step="0.01" min="0" value="0" oninput="contaPreviewTotal()">
+        </div>
+        <div class="form-group">
+          <label>Mixto Tarjeta</label>
+          <input type="number" id="ventaMixtoTj" step="0.01" min="0" value="0" oninput="contaPreviewTotal()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <textarea id="ventaNotas" rows="2" placeholder="Opcional..."></textarea>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:6px">
+        <span class="text-muted" style="font-size:.85em">Total a registrar:</span>
+        <strong class="text-primary" style="font-size:1.1em" id="ventaPreviewTotal">S/. 0.00</strong>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-success btn-block" onclick="contaGuardarVenta()">Guardar</button>
+        <button class="btn btn-secondary btn-sm" onclick="contaCancelarVenta()" id="btnCancelarVenta" style="display:none">Cancelar</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="filter-bar" style="margin-bottom:15px">
+        <select id="ventaMes" onchange="contaCargarVentas()">
+          <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+          <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <input type="number" id="ventaAnio" style="width:82px" min="2020" max="2099" onchange="contaCargarVentas()">
+        <button class="btn btn-secondary btn-sm" onclick="contaLimpiarFiltro('ventas')">Limpiar</button>
+      </div>
+      <div class="form-card" style="padding:0;overflow:hidden">
+        <div class="table-responsive" id="tablaVentas">
+          <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── GASTOS ── -->
+<div class="conta-section" id="conta-gastos">
+  <div class="section-header">
+    <h2>Gastos Fijos Mensuales</h2>
+    <span class="section-subtitle">Control de egresos por período</span>
+  </div>
+
+  <div class="filter-bar" style="margin-bottom:15px">
+    <select id="gastoMes" onchange="contaCargarGastosFijos()">
+      <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+      <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+      <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="gastoAnio" style="width:82px" min="2020" max="2099" onchange="contaCargarGastosFijos()">
+    <button class="btn btn-primary btn-sm" onclick="contaNuevoItem()">+ Nuevo Ítem</button>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaGastosFijos">
+      <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+    </div>
+  </div>
+
+  <!-- Modal crear/editar item -->
+  <div class="modal-overlay hide" id="gastoItemModal" onclick="if(event.target===this) contaCancelarItem()">
+    <div class="modal-card" style="max-width:480px">
+      <div class="modal-header">
+        <h3 id="gastoItemModalTitulo">Nuevo Ítem</h3>
+        <button class="modal-close" onclick="contaCancelarItem()" aria-label="Cerrar">✕</button>
+      </div>
+      <input type="hidden" id="gastoItemId">
+      <div class="form-group">
+        <label>Nombre del ítem *</label>
+        <input type="text" id="gastoItemNombre" placeholder="Ej: LUZ DEL SUR">
+      </div>
+      <div class="form-group">
+        <label>Valor por defecto (S/.)</label>
+        <input type="number" id="gastoItemDefault" step="0.01" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label>Origen de datos</label>
+        <select id="gastoItemOrigen" onchange="contaToggleOrigenParam()">
+          <option value="manual">Manual</option>
+          <option value="compras">Compras (por proveedor)</option>
+          <option value="compras_otros">Compras (otros no listados)</option>
+          <option value="asistencia">Asistencia (sueldos quincena)</option>
+        </select>
+      </div>
+      <div class="form-group" id="gastoItemParamGroup" style="display:none">
+        <label id="gastoItemParamLabel">Proveedor(es)</label>
+        <input type="text" id="gastoItemParam" placeholder="Ej: ELOY o EMILIO,CESAR">
+        <small style="color:var(--text-muted);font-size:.75rem">Separá múltiples con coma. Para asistencia: 1 = 1ra quincena, 2 = 2da quincena</small>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="contaCancelarItem()">Cancelar</button>
+        <button class="btn btn-primary" onclick="contaGuardarItem()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal eliminar item -->
+  <div class="modal-overlay hide" id="gastoDeleteItemModal" onclick="if(event.target===this) contaCancelarDeleteItem()">
+    <div class="modal-card" style="max-width:420px">
+      <div class="modal-header">
+        <h3>🗑️ Eliminar Ítem</h3>
+        <button class="modal-close" onclick="contaCancelarDeleteItem()" aria-label="Cerrar">✕</button>
+      </div>
+      <p style="margin:0 0 12px;font-size:.88rem">¿Eliminar <strong id="gastoDeleteItemNombre"></strong>? Se borrarán también sus valores mensuales guardados.</p>
+      <input type="hidden" id="gastoDeleteItemId">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="contaCancelarDeleteItem()">Cancelar</button>
+        <button class="btn btn-danger" onclick="contaConfirmarDeleteItem()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BALANCE ── -->
+<div class="conta-section" id="conta-balance">
+  <div class="section-header">
+    <h2>Balance General</h2>
+    <span class="section-subtitle">Análisis financiero del período</span>
+  </div>
+
+  <div class="filter-bar" style="margin-bottom:25px">
+    <select id="balMes" onchange="contaCargarBalance()">
+      <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+      <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+      <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="balAnio" style="width:82px" min="2020" max="2099" onchange="contaCargarBalance()">
+    <button class="btn btn-secondary btn-sm" onclick="contaLimpiarFiltro('balance')">Limpiar</button>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card card-primary">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <p class="card-label">Ventas Brutas</p>
+        <h3 class="card-value" id="balVentasBrutas">S/. 0.00</h3>
+      </div>
+    </div>
+    <div class="card card-warning">
+      <div class="card-icon">🏛️</div>
+      <div class="card-content">
+        <p class="card-label">IGV (10.5%)</p>
+        <h3 class="card-value" id="balIGV">S/. 0.00</h3>
+      </div>
+    </div>
+    <div class="card card-success">
+      <div class="card-icon">✅</div>
+      <div class="card-content">
+        <p class="card-label">Ventas Netas</p>
+        <h3 class="card-value" id="balVentasNetas">S/. 0.00</h3>
+      </div>
+    </div>
+    <div class="card card-danger">
+      <div class="card-icon">📉</div>
+      <div class="card-content">
+        <p class="card-label">Total Gastos</p>
+        <h3 class="card-value" id="balTotalGastos">S/. 0.00</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card" id="balUtilBox" style="text-align:center;padding:35px;margin-bottom:25px">
+    <p class="card-label" style="margin-bottom:10px">UTILIDAD NETA FINAL</p>
+    <p style="margin:0 0 10px;color:#39ff14;font-size:.82em;font-weight:700;letter-spacing:.02em">Ventas Brutas - Total Gastos</p>
+    <h2 id="balUtilidad" style="font-size:3em;font-weight:800;letter-spacing:-2px">S/. 0.00</h2>
+    <p class="text-muted" id="balMargen" style="margin-top:8px">Margen: 0%</p>
+  </div>
+
+  <div class="content-grid">
+    <div class="form-card">
+      <h3>Gastos por Categoría</h3>
+      <div id="balPorTipo" style="margin-top:12px">—</div>
+    </div>
+    <div class="form-card">
+      <h3>Composición (%)</h3>
+      <div id="balComposicion" style="margin-top:12px">—</div>
+    </div>
+  </div>
+</div>
+
+<style>
+
+.conta-section        { display:none; animation:fadeIn .35s ease; }
+.conta-section.active { display:block; }
+
+.filter-bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.filter-bar input, .filter-bar select { width:auto; }
+</style>

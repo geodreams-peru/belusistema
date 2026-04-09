@@ -1,0 +1,268 @@
+<!-- ══════════════ MÓDULO COMPRAS ══════════════ -->
+
+<div class="mod-tabs">
+  <button class="mod-tab active" onclick="comprasTab('dashboard')">📊 Dashboard</button>
+  <button class="mod-tab" onclick="comprasTab('registros')">🛒 Registros</button>
+  <button class="mod-tab" onclick="comprasTab('resumen')">📈 Resumen</button>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div class="compras-section active" id="compras-dashboard">
+  <div class="section-header">
+    <h2>Compras</h2>
+    <span class="section-subtitle" id="comprasFechaHoy"></span>
+  </div>
+
+  <div class="filter-bar" style="margin-bottom:18px">
+    <select id="cDashMesFiltro" onchange="comprasCargarDashboard()">
+      <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+      <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+      <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="cDashAnio" style="width:82px" min="2020" max="2099" onchange="comprasCargarDashboard()">
+  </div>
+
+  <div class="cards-grid" style="margin-bottom:25px">
+    <div class="card card-primary">
+      <div class="card-icon">📦</div>
+      <div class="card-content">
+        <p class="card-label">Total hoy</p>
+        <h3 class="card-value" id="cDashHoy">S/ 0</h3>
+      </div>
+    </div>
+    <div class="card card-success">
+      <div class="card-icon">📅</div>
+      <div class="card-content">
+        <p class="card-label">Total del mes</p>
+        <h3 class="card-value" id="cDashTotalMes">S/ 0</h3>
+      </div>
+    </div>
+    <div class="card card-warning">
+      <div class="card-icon">🧾</div>
+      <div class="card-content">
+        <p class="card-label">Registros del mes</p>
+        <h3 class="card-value" id="cDashQty">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
+    <div class="form-card">
+      <h3 style="margin-bottom:16px">Top Proveedores (mes)</h3>
+      <div id="cDashTopProv"></div>
+    </div>
+    <div class="form-card">
+      <h3 style="margin-bottom:16px">Por Método de Pago (mes)</h3>
+      <div id="cDashPorPago"></div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-top:22px;padding:0;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <h3>Últimas 10 compras</h3>
+    </div>
+    <div class="table-responsive" id="cDashUltimas"></div>
+  </div>
+</div>
+
+<!-- ── REGISTROS ── -->
+<div class="compras-section" id="compras-registros">
+  <div class="section-header">
+    <h2>Registros de Compras</h2>
+  </div>
+
+  <!-- Formulario -->
+  <div class="form-card" id="comprasForm" style="display:none;margin-bottom:22px">
+    <h3 id="comprasFormTitulo" style="margin-bottom:10px">Nueva Compra</h3>
+    <input type="hidden" id="cId">
+    <datalist id="cProdList"></datalist>
+
+    <!-- Fila cabecera: fecha, pago, proveedor -->
+    <div class="form-group-row" style="margin-bottom:8px">
+      <div class="form-group" style="flex:0 0 130px;min-width:0">
+        <label>Fecha *</label>
+        <input type="date" id="cFecha">
+      </div>
+      <div class="form-group" style="flex:0 0 130px;min-width:0">
+        <label>Pago</label>
+        <select id="cPago">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Banco">Banco</option>
+          <option value="Yape">Yape</option>
+          <option value="Plin">Plin</option>
+        </select>
+      </div>
+      <div class="form-group" style="min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <label style="margin-bottom:0" for="cProveedor">Proveedor *</label>
+          <button type="button" class="btn btn-secondary btn-xs" onclick="comprasAbrirProveedores()" title="Gestionar proveedores" style="padding:1px 6px;font-size:.7rem">⚙</button>
+        </div>
+        <select id="cProveedor"><option value="">-- Seleccionar --</option></select>
+      </div>
+    </div>
+
+    <!-- Cabecera columnas productos -->
+    <div class="cFilas-header">
+      <span>Producto *</span>
+      <span>Peso (kg)</span>
+      <span>P. Unit (S/.)</span>
+      <span>P. Final *</span>
+      <span>Nota</span>
+      <span title="Pagado" style="text-align:center">💰</span>
+      <span></span>
+    </div>
+
+    <!-- Filas dinámicas de productos -->
+    <div id="cFilasProductos"></div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-top:4px;margin-bottom:12px">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnAgregarFila" onclick="comprasAgregarFila()">+ Producto</button>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="comprasGuardar()">Guardar</button>
+      <button class="btn btn-secondary btn-sm" onclick="comprasCancelar()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-bar compras-filter-row" style="margin-bottom:18px">
+    <select id="cMes" onchange="comprasCargar()">
+      <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+      <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+      <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="cAnio" style="width:82px" min="2020" max="2099" onchange="comprasCargar()">
+    <input type="text" id="cFiltProv" placeholder="Proveedor..." style="max-width:160px">
+    <input type="text" id="cFiltProd" placeholder="Producto..." style="max-width:160px">
+    <select id="cFiltPago" style="max-width:130px" onchange="comprasCargar()">
+      <option value="">Todos los pagos</option>
+      <option value="Efectivo">Efectivo</option>
+      <option value="Banco">Banco</option>
+      <option value="Yape">Yape</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="comprasNuevo()">+ Nueva Compra</button>
+  </div>
+
+  <div class="form-card" style="padding:12px 16px;margin-bottom:8px;display:flex;gap:20px;align-items:center">
+    <span style="color:var(--text-muted);font-size:.88em">Resultados: <strong id="cTotalQty">—</strong></span>
+    <span style="color:var(--text-muted);font-size:.88em">Total: <strong id="cTotalSuma" style="color:var(--primary)">—</strong></span>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaCompras">
+      <p class="text-center text-muted" style="padding:30px">Aplicá un filtro para ver registros.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESUMEN ── -->
+<div class="compras-section" id="compras-resumen">
+  <div class="section-header"><h2>Resumen</h2></div>
+
+  <div class="filter-bar compras-filter-row" style="margin-bottom:22px">
+    <select id="rMes" onchange="comprasCargarResumen()">
+      <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+      <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+      <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="rAnio" style="width:82px" min="2020" max="2099" onchange="comprasCargarResumen()">
+    <select id="rAgrupar" style="max-width:170px" onchange="comprasCargarResumen()">
+      <option value="proveedor">Por Proveedor</option>
+      <option value="producto">Por Producto</option>
+    </select>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaResumen">
+      <p class="text-center text-muted" style="padding:30px">Seleccioná un período y hacé clic en Calcular.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+.compras-section        { display:none; animation:fadeIn .35s ease; }
+.compras-section.active { display:block; }
+
+.compras-filter-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compras-filter-row input,
+.compras-filter-row select,
+.compras-filter-row .btn {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+/* ── Formulario batch compras ── */
+.cFilas-header,
+.cFila-producto {
+  display: grid;
+  grid-template-columns: 2fr 80px 90px 90px 1fr 32px 30px;
+  gap: 6px;
+  align-items: center;
+}
+.cFilas-header {
+  margin-bottom: 4px;
+  padding: 0 2px;
+}
+.cFilas-header span {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.cFila-producto {
+  margin-bottom: 6px;
+}
+.cFila-producto input {
+  padding: .3rem .45rem;
+  font-size: .85rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (max-width: 700px) {
+  .cFilas-header { display: none; }
+  .cFila-producto { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Modal proveedores ── */
+.prov-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center; }
+.prov-modal { background:var(--bg-card, #23272b);color:var(--text, #f0f0f0);border-radius:10px;width:420px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.25); }
+.prov-modal-head { padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
+.prov-modal-head h3 { margin:0;font-size:1rem; }
+.prov-modal-body { padding:14px 18px;overflow-y:auto;flex:1; }
+.prov-modal-body .prov-item { display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border); }
+.prov-modal-body .prov-item span { flex:1;font-size:.9em; }
+.prov-add-row { display:flex;gap:8px;margin-top:10px; }
+.prov-add-row input { flex:1; }
+
+/* Badge pagado */
+.badge-pagado { background:#d4edda;color:#155724;font-size:.75em;padding:2px 8px;border-radius:10px; }
+.badge-pendiente { background:#fff3cd;color:#856404;font-size:.75em;padding:2px 8px;border-radius:10px; }
+</style>
+
+<!-- Modal de proveedores -->
+<div id="provModal" class="prov-overlay" style="display:none">
+  <div class="prov-modal">
+    <div class="prov-modal-head">
+      <h3>Proveedores</h3>
+      <button class="btn btn-secondary btn-xs" onclick="comprasCerrarProveedores()">✕</button>
+    </div>
+    <div class="prov-modal-body">
+      <div id="provLista"></div>
+      <div class="prov-add-row">
+        <input type="text" id="provNuevoNombre" placeholder="Nuevo proveedor...">
+        <button class="btn btn-primary btn-sm" onclick="comprasCrearProveedor()">Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BELÚ System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ════════════════ SIDEBAR ════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🍖</span>
+        <h1>BELÚ</h1>
+      </div>
+      <p class="logo-subtitle">Sistema de Gestión</p>
+    </div>
+
+    <nav class="sidebar-nav">
+
+      <!-- Inicio -->
+      <ul class="nav-list">
+        <li>
+          <button class="nav-link active" data-modulo="inicio" onclick="cargarModulo('inicio')">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">Inicio</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Módulos BELÚ -->
+      <p class="nav-group-label">BELÚ Chicharronería</p>
+      <ul class="nav-list" id="navBelu">
+        <li>
+          <button class="nav-link" data-modulo="asistencia" onclick="cargarModulo('asistencia')">
+            <span class="nav-icon">👥</span>
+            <span class="nav-text">Asistencia</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" data-modulo="compras" onclick="cargarModulo('compras')">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-text">Compras</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" data-modulo="errores" onclick="cargarModulo('errores')">
+            <span class="nav-icon">⚠️</span>
+            <span class="nav-text">Errores</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" data-modulo="contabilidad" onclick="cargarModulo('contabilidad')">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">Contabilidad</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Módulos DKP -->
+      <p class="nav-group-label">El Chino Criollo</p>
+      <ul class="nav-list" id="navDkp">
+        <li>
+          <button class="nav-link" data-modulo="movimientos" onclick="cargarModulo('movimientos')">
+            <span class="nav-icon">📦</span>
+            <span class="nav-text">Movimientos DKP</span>
+          </button>
+        </li>
+      </ul>
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div>
+          <div class="user-name" id="userName">...</div>
+          <div class="user-rol" id="userRol">...</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+  </aside>
+
+  <!-- ════════════════ CONTENIDO ════════════════ -->
+  <main class="main-content">
+
+    <div class="page-header">
+      <h2 id="pageTitle">Inicio</h2>
+      <div id="modTabsSlot"></div>
+      <button class="btn-kiosco-login" id="btnKioscoLogin" title="Ingresar al sistema" onclick="abrirLoginModal()" style="display:none">⚙️</button>
+      <span class="date-time" id="dateTime"></span>
+    </div>
+
+    <!-- MÓDULO: INICIO (bienvenida) -->
+    <section class="module-section active" id="mod-inicio">
+      <p class="text-muted" style="margin-bottom:28px;">Seleccioná un módulo para comenzar.</p>
+      <div class="welcome-grid" id="welcomeGrid">
+        <!-- Se genera dinámicamente según permisos del usuario -->
+      </div>
+    </section>
+
+    <!-- MÓDULO: ASISTENCIA -->
+    <section class="module-section" id="mod-asistencia">
+      <div class="placeholder-box">
+        <div class="ph-icon">👥</div>
+        <h3>Módulo Asistencia</h3>
+        <p>En construcción — Paso 5</p>
+      </div>
+    </section>
+
+    <!-- MÓDULO: COMPRAS -->
+    <section class="module-section" id="mod-compras">
+      <div class="placeholder-box">
+        <div class="ph-icon">🛒</div>
+        <h3>Módulo Compras</h3>
+        <p>En construcción — Paso 7</p>
+      </div>
+    </section>
+
+    <!-- MÓDULO: ERRORES -->
+    <section class="module-section" id="mod-errores">
+      <div class="placeholder-box">
+        <div class="ph-icon">⚠️</div>
+        <h3>Módulo Errores</h3>
+        <p>En construcción — Paso 8</p>
+      </div>
+    </section>
+
+    <!-- MÓDULO: CONTABILIDAD -->
+    <section class="module-section" id="mod-contabilidad">
+      <div class="placeholder-box">
+        <div class="ph-icon">📊</div>
+        <h3>Módulo Contabilidad</h3>
+        <p>En construcción — Paso 3</p>
+      </div>
+    </section>
+
+    <!-- MÓDULO: MOVIMIENTOS DKP -->
+    <section class="module-section" id="mod-movimientos">
+      <div class="placeholder-box">
+        <div class="ph-icon">📦</div>
+        <h3>Módulo Movimientos DKP</h3>
+        <p>En construcción — Paso 4</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal login rápido (modo kiosco) -->
+  <div class="modal-overlay hide" id="kioscoLoginModal" onclick="if(event.target===this) cerrarLoginModal()">
+    <div class="modal-card kiosco-login-card" style="max-width:420px">
+      <div class="modal-header">
+        <h3>Ingreso Administrativo</h3>
+        <button class="modal-close" onclick="cerrarLoginModal()" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="kioscoLoginError" class="login-error" style="margin-bottom:14px"></div>
+
+      <form id="kioscoLoginForm">
+        <div class="form-group">
+          <label for="kioscoUser">Usuario</label>
+          <input type="text" id="kioscoUser" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="kioscoPass">Contraseña</label>
+          <input type="password" id="kioscoPass" autocomplete="current-password" required>
+        </div>
+        <div class="modal-actions" style="margin-top:14px">
+          <button type="button" class="btn btn-secondary" onclick="cerrarLoginModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnKioscoSubmit">Ingresar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

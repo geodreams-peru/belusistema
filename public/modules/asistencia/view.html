@@ -1,0 +1,596 @@
+<!-- ══════════════ MÓDULO ASISTENCIA ══════════════ -->
+
+<!-- Sub-tabs -->
+<div class="mod-tabs">
+  <button class="mod-tab active" onclick="asistTab('marcar')">🕐 Marcar</button>
+  <button class="mod-tab" onclick="asistTab('hoy')">📋 Hoy</button>
+  <button class="mod-tab" onclick="asistTab('empleados')">👥 Empleados</button>
+  <button class="mod-tab" onclick="asistTab('registros')">📅 Registros</button>
+  <button class="mod-tab" onclick="asistTab('sueldos')">💵 Sueldos</button>
+  <button class="mod-tab asist-admin-tab" onclick="asistTab('auditoria')">🔍 Auditoría</button>
+  <button class="mod-tab asist-admin-tab" onclick="asistTab('config')">⚙️ Config</button>
+</div>
+
+<!-- ── MARCAR ── -->
+<div class="asist-section active" id="asist-marcar">
+  <div class="marcar-grid">
+
+    <!-- ══ COLUMNA IZQUIERDA: Panel de marcado ══ -->
+    <div class="marcar-col-izq">
+      <div class="form-card" style="text-align:center;padding:24px 20px">
+
+        <!-- Icono + título -->
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;background:rgba(143,163,255,.1);border-radius:12px;margin-bottom:10px">
+          <span style="font-size:1.4em">🖐</span>
+        </div>
+        <h2 style="font-size:1.05rem;font-weight:700;margin:0 0 2px;color:var(--primary)">Registrar Asistencia</h2>
+        <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 14px">Ingresá tu DNI o Carnet de Extranjería</p>
+
+        <!-- Input documento -->
+        <div style="text-align:left;margin-bottom:4px">
+          <label style="font-size:.78rem;font-weight:600;display:block;margin-bottom:4px">Número de Documento</label>
+          <input type="text" id="marcaDoc" inputmode="none" readonly autocomplete="off"
+            placeholder="Ej. 09876543"
+            style="text-align:center;font-size:1.5rem;font-weight:700;letter-spacing:.25rem;font-family:monospace;cursor:default;padding:.35rem .75rem;width:100%">
+        </div>
+        <!-- Preview empleado -->
+        <div id="marcaPreview" style="min-height:1.3rem;font-size:.78rem;text-align:left;margin-bottom:10px;padding:0 2px">&nbsp;</div>
+
+        <!-- Teclado numérico -->
+        <div class="teclado-numerico">
+          <div class="tecla-grid">
+            <button class="btn-tecla" onclick="asistTecla('1')">1</button>
+            <button class="btn-tecla" onclick="asistTecla('2')">2</button>
+            <button class="btn-tecla" onclick="asistTecla('3')">3</button>
+            <button class="btn-tecla" onclick="asistTecla('4')">4</button>
+            <button class="btn-tecla" onclick="asistTecla('5')">5</button>
+            <button class="btn-tecla" onclick="asistTecla('6')">6</button>
+            <button class="btn-tecla" onclick="asistTecla('7')">7</button>
+            <button class="btn-tecla" onclick="asistTecla('8')">8</button>
+            <button class="btn-tecla" onclick="asistTecla('9')">9</button>
+            <button class="btn-tecla btn-tecla-accion" onclick="asistTeclaBorrar()">⌫</button>
+            <button class="btn-tecla" onclick="asistTecla('0')">0</button>
+            <button class="btn-tecla btn-tecla-accion" onclick="asistTeclaLimpiar()">C</button>
+          </div>
+        </div>
+
+        <!-- Botón marcar -->
+        <button class="btn btn-primary btn-block" style="font-size:.9rem;padding:.5rem;margin-top:4px" onclick="asistMarcar()">
+          ✅ Marcar Entrada / Salida
+        </button>
+
+        <!-- Flash resultado -->
+        <div id="marcaFlash" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:.88rem;font-weight:600"></div>
+
+        <!-- Reloj -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+          <div id="asistReloj" style="font-size:1.9rem;font-weight:700;font-family:monospace;color:var(--primary);letter-spacing:.05em;line-height:1.1"></div>
+          <div id="asistFechaTexto" style="font-size:.75rem;color:var(--text-muted);margin-top:2px"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ COLUMNA DERECHA: Cámara + Stats + Último + Leaderboard + Marcas ══ -->
+    <div class="marcar-col-der">
+
+      <!-- Cámara de verificación -->
+      <div class="form-card" style="padding:10px;margin-bottom:14px;text-align:center">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:.85em">📷</span>
+          <span style="font-size:.75rem;font-weight:600;color:var(--text-muted)">Cámara de verificación</span>
+        </div>
+        <div id="camaraContainer" style="position:relative;width:100%;aspect-ratio:4/3;background:#111;border-radius:8px;overflow:hidden;max-height:200px">
+          <video id="camaraVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+          <canvas id="camaraCanvas" style="display:none"></canvas>
+          <div id="camaraOff" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--text-muted);font-size:.85rem">
+            <span style="font-size:1.8em">📷</span>
+            Iniciando cámara...
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat pills -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-card" style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:8px;background:rgba(86,208,142,.1);display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0">✅</div>
+          <div>
+            <div id="marcaStatPresentes" style="font-size:1.4rem;font-weight:700;color:var(--success);line-height:1">0</div>
+            <div style="font-size:.72rem;color:var(--text-muted)">Marcaron hoy</div>
+          </div>
+        </div>
+        <div class="form-card" style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:8px;background:rgba(143,163,255,.1);display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0">👥</div>
+          <div>
+            <div id="marcaStatTotal" style="font-size:1.4rem;font-weight:700;color:var(--primary);line-height:1">0</div>
+            <div style="font-size:.72rem;color:var(--text-muted)">Empleados activos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marcas de hoy -->
+      <div class="form-card" style="padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:.85em">📋</span>
+          <span style="font-size:.75rem;font-weight:600;color:var(--text-muted)">Marcas de hoy</span>
+          <span id="marcaQtyBadge" style="margin-left:auto;font-size:.65rem;font-weight:600;background:var(--primary);color:#fff;padding:2px 7px;border-radius:20px">0</span>
+        </div>
+        <div id="marcasHoyLista" style="max-height:160px;overflow-y:auto"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── HOY ── -->
+<div class="asist-section" id="asist-hoy">
+  <div class="section-header"><h2>Asistencia de Hoy</h2><span class="section-subtitle" id="asistFechaHoy"></span></div>
+
+  <div class="cards-grid" style="margin-bottom:25px">
+    <div class="card card-primary"><div class="card-icon">👥</div>
+      <div class="card-content"><p class="card-label">Empleados activos</p><h3 class="card-value" id="asistTotal">0</h3></div></div>
+    <div class="card card-success"><div class="card-icon">✅</div>
+      <div class="card-content"><p class="card-label">Presentes hoy</p><h3 class="card-value" id="asistPresentes">0</h3></div></div>
+    <div class="card card-warning"><div class="card-icon">🏆</div>
+      <div class="card-content"><p class="card-label">Período actual</p><h3 class="card-value" id="asistPeriodo" style="font-size:1em">—</h3></div></div>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaHoy">
+      <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-top:22px">
+    <h3 style="margin-bottom:16px">Leaderboard Quincenal</h3>
+    <div id="leaderboard"></div>
+  </div>
+</div>
+
+<!-- ── EMPLEADOS ── -->
+<div class="asist-section" id="asist-empleados">
+  <div class="section-header">
+    <h2>Empleados</h2>
+    <div style="display:flex;gap:10px;align-items:center">
+      <label style="color:var(--text-muted);font-size:.85em">
+        <input type="checkbox" id="mostrarInactivos" onchange="asistCargarEmpleados()"> Ver inactivos
+      </label>
+      <button class="btn btn-primary btn-sm" onclick="asistNuevoEmpleado()">+ Nuevo Empleado</button>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="form-card" id="empForm" style="display:none;margin-bottom:22px">
+    <h3 id="empFormTitulo">Nuevo Empleado</h3>
+    <input type="hidden" id="empId">
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>Tipo Doc</label>
+        <select id="empTipoDoc">
+          <option value="DNI">DNI</option>
+          <option value="CE">CE</option>
+          <option value="PASS">Pasaporte</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Documento *</label>
+        <input type="text" id="empDocumento" placeholder="N° documento" required>
+      </div>
+    </div>
+    <div class="form-group-row">
+      <div class="form-group"><label>Nombre *</label><input type="text" id="empNombre" required></div>
+      <div class="form-group"><label>Apellido *</label><input type="text" id="empApellido" required></div>
+    </div>
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>Cargo</label>
+        <select id="empCargo">
+          <option value="">-- Sin cargo --</option>
+          <option>Mozo/Azafata</option>
+          <option>Ayudante de cocina</option>
+          <option>Planchero</option>
+          <option>Armado</option>
+          <option>Caja</option>
+          <option>Admin</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Celular</label><input type="text" id="empCelular"></div>
+    </div>
+    <div class="form-group-row">
+      <div class="form-group"><label>Email</label><input type="email" id="empEmail"></div>
+      <div class="form-group">
+        <label>Foto</label>
+        <input type="file" id="empFoto" accept="image/*" style="padding:8px">
+      </div>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="empOnp" style="width:auto;margin-right:8px"> Descuento ONP (13%)</label>
+    </div>
+    <input type="hidden" id="empFotoActual">
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary btn-block" onclick="asistGuardarEmpleado()">Guardar</button>
+      <button class="btn btn-secondary btn-sm" onclick="asistCancelarEmpleado()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaEmpleados">
+      <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── REGISTROS ── -->
+<div class="asist-section" id="asist-registros">
+  <div class="section-header"><h2>Registros</h2><span class="section-subtitle">Historial de asistencias</span></div>
+
+  <div class="filter-bar" style="margin-bottom:18px">
+    <select id="regMes" onchange="asistCargarRegistros()">
+      <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+      <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+      <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <input type="number" id="regAnio" style="width:82px" min="2020" max="2099" onchange="asistCargarRegistros()">
+    <select id="regEmpleado" style="max-width:220px" onchange="asistCargarRegistros()">
+      <option value="">Todos los empleados</option>
+    </select>
+    <button class="btn btn-secondary btn-sm asist-admin-tab" onclick="asistNuevoRegistro()">+ Manual</button>
+  </div>
+
+  <!-- Modal de formulario manual/edición -->
+  <div class="modal-overlay hide" id="regModal" onclick="if(event.target===this) asistCancelarRegistro()">
+    <div class="modal-card" style="max-width:640px">
+      <div class="modal-header">
+        <h3 id="regFormTitulo">Registro Manual</h3>
+        <button class="modal-close" onclick="asistCancelarRegistro()" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="regForm">
+        <input type="hidden" id="regId">
+        <div class="form-group-row">
+          <div class="form-group">
+            <label>Empleado</label>
+            <select id="regEmpSelect"></select>
+          </div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="regFecha"></div>
+        </div>
+        <div class="form-group-row">
+          <div class="form-group"><label>Hora Entrada</label><input type="time" id="regEntrada"></div>
+          <div class="form-group"><label>Hora Salida</label><input type="time" id="regSalida"></div>
+        </div>
+        <div class="form-group"><label>Observación</label><input type="text" id="regObs" placeholder="Opcional..."></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="asistCancelarRegistro()">Cancelar</button>
+          <button class="btn btn-primary" onclick="asistGuardarRegistro()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaRegistros">
+      <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+    </div>
+  </div>
+
+  <!-- Modal confirmación eliminar registro -->
+  <div class="modal-overlay hide" id="regDeleteModal" onclick="if(event.target===this) asistCancelarDelete()">
+    <div class="modal-card" style="max-width:480px">
+      <div class="modal-header">
+        <h3>🗑️ Eliminar Registro</h3>
+        <button class="modal-close" onclick="asistCancelarDelete()" aria-label="Cerrar">✕</button>
+      </div>
+      <p style="margin:0 0 12px;font-size:.88rem;color:var(--text-muted)">Esta acción no se puede deshacer. Ingresá el motivo de la eliminación:</p>
+      <input type="hidden" id="regDeleteId">
+      <div class="form-group">
+        <label>Motivo de eliminación *</label>
+        <textarea id="regDeleteMotivo" rows="3" placeholder="Escribí el motivo..." style="width:100%" required></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="asistCancelarDelete()">Cancelar</button>
+        <button class="btn btn-danger" id="btnConfirmarDelete" onclick="asistConfirmarDelete()">Eliminar Registro</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUELDOS ── -->
+<div class="asist-section" id="asist-sueldos">
+  <div class="section-header"><h2>Liquidación de Sueldos</h2></div>
+
+  <div class="filter-bar" style="margin-bottom:22px">
+    <select id="sueldoAnio" style="max-width:100px" onchange="asistCargarSueldos()"></select>
+    <select id="sueldoMes" onchange="asistCargarSueldos()">
+      <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+      <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+      <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+      <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+    </select>
+    <select id="sueldoQuincena" onchange="asistCargarSueldos()">
+      <option value="1">1° Quincena (1–15)</option>
+      <option value="2">2° Quincena (16–fin)</option>
+    </select>
+  </div>
+
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaSueldos">
+      <p class="text-center text-muted" style="padding:30px">Seleccioná el período y hacé clic en Calcular.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUDITORÍA ── -->
+<div class="asist-section asist-admin-section" id="asist-auditoria">
+  <div class="section-header"><h2>Auditoría</h2><span class="section-subtitle">Últimas 200 acciones</span></div>
+  <div class="form-card" style="padding:0;overflow:hidden">
+    <div class="table-responsive" id="tablaAuditoria">
+      <p class="text-center text-muted" style="padding:30px">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIGURACIÓN ── -->
+<div class="asist-section asist-admin-section" id="asist-config">
+  <div class="section-header"><h2>⚙️ Configuración Master</h2></div>
+  <div style="max-width:640px">
+
+    <!-- Valores salariales -->
+    <div class="form-card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:14px;font-size:.9rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">💰 Valores Salariales</h3>
+      <div class="form-group">
+        <label>Sueldo Mínimo (S/.)</label>
+        <input type="number" id="cfgSueldo" step="0.01" min="0" oninput="cfgRecalcular()">
+      </div>
+      <div class="form-group-row" style="margin-top:12px">
+        <div class="form-group">
+          <label style="color:var(--text-muted)">Valor del día (S/.)</label>
+          <input type="text" id="cfgValorDia" readonly
+            style="background:var(--bg-darker);color:var(--text-muted);font-weight:600">
+          <small style="color:var(--text-muted);font-size:.75rem">Sueldo ÷ 30 días</small>
+        </div>
+        <div class="form-group">
+          <label style="color:var(--text-muted)">Valor de la hora (S/.)</label>
+          <input type="text" id="cfgValorHora" readonly
+            style="background:var(--bg-darker);color:var(--text-muted);font-weight:600">
+          <small style="color:var(--text-muted);font-size:.75rem">Valor día ÷ 8 horas</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Horario y tardanza -->
+    <div class="form-card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:14px;font-size:.9rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">🕐 Horario y Tardanza</h3>
+      <div class="form-group-row">
+        <div class="form-group">
+          <label>Hora de Ingreso</label>
+          <input type="time" id="cfgHoraIngreso" oninput="cfgActualizarResumen()">
+          <small style="color:var(--text-muted);font-size:.75rem">Hora oficial de entrada.</small>
+        </div>
+        <div class="form-group">
+          <label>Tolerancia (minutos)</label>
+          <input type="number" id="cfgTolerancia" min="0" max="60" oninput="cfgActualizarResumen()">
+          <small style="color:var(--text-muted);font-size:.75rem">Minutos de gracia antes de marcar Tardanza.</small>
+        </div>
+        <div class="form-group">
+          <label>Descuento tardanza (S/.)</label>
+          <input type="number" id="cfgDescTard" step="0.50" min="0" oninput="cfgActualizarResumen()">
+          <small style="color:var(--text-muted);font-size:.75rem">Monto fijo por tardanza.</small>
+        </div>
+      </div>
+      <!-- Resumen de la regla -->
+      <div style="margin-top:14px;padding:10px 14px;border-radius:8px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);font-size:.85rem">
+        ⚠️ Estado <strong>Tardanza</strong> si la entrada supera las
+        <strong id="cfgResHora">06:30</strong>
+        + <strong id="cfgResTol">5</strong> min de tolerancia
+        (desde <strong id="cfgResDesde">06:36</strong>)
+        → descuento de <strong>S/. <span id="cfgResDesc">2.00</span></strong>.
+      </div>
+    </div>
+
+    <!-- Correo SMTP -->
+    <div class="form-card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:14px;font-size:.9rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">📧 Notificaciones por Correo</h3>
+      <div class="form-group">
+        <label><input type="checkbox" id="cfgEmailActivo" style="width:auto;margin-right:8px"> Envío automático activado</label>
+        <small style="display:block;color:var(--text-muted);font-size:.75rem;margin-top:4px">Resumen quincenal automático: día 15 y día 2 a las 7:00 PM.</small>
+      </div>
+      <div class="form-group-row" style="margin-top:10px">
+        <div class="form-group"><label>Servidor SMTP</label><input type="text" id="cfgSmtp" placeholder="smtp.gmail.com"></div>
+        <div class="form-group"><label>Puerto</label><input type="number" id="cfgPuerto" min="1" max="65535"></div>
+      </div>
+      <div class="form-group"><label>Correo remitente</label><input type="email" id="cfgEmailUser" placeholder="tucorreo@gmail.com" autocomplete="off"></div>
+      <div class="form-group"><label>Contraseña de aplicación</label><input type="password" id="cfgEmailPass" placeholder="Contraseña de app Gmail" autocomplete="new-password"></div>
+    </div>
+
+    <!-- Guardar -->
+    <button class="btn btn-primary btn-block" onclick="asistGuardarConfig()">💾 Guardar Configuración</button>
+    <p id="cfgMsg" style="text-align:center;margin-top:12px;font-size:.88em;color:var(--success)"></p>
+
+    <!-- Acciones de correo -->
+    <div class="form-card" style="margin-top:22px">
+      <h3 style="margin-bottom:14px;font-size:.9rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">📤 Enviar Resumen Quincenal</h3>
+      <div class="filter-bar" style="flex-wrap:wrap;margin-bottom:8px">
+        <select id="cfgQAnio" style="max-width:90px"></select>
+        <select id="cfgQMes">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <select id="cfgQQuincena">
+          <option value="1">1ra (1–15)</option>
+          <option value="2">2da (16–fin)</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="asistEnviarCorreos()">📧 Enviar ahora</button>
+      </div>
+      <small style="color:var(--text-muted);font-size:.78rem">Se enviarán correos a todos los empleados con correo registrado.</small>
+      <p id="cfgCorreoMsg" style="margin-top:10px;font-size:.85rem"></p>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.asist-section        { display:none; animation:fadeIn .35s ease; }
+.asist-section.active { display:block; }
+.asist-admin-tab      { display:none; }
+.asist-admin-section  { display:none !important; }
+.asist-admin-section.active { display:block !important; }
+
+/* ── Marcar: ocupar pantalla sin scroll vertical (desktop) ── */
+#asist-marcar {
+  height: 90vh;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+/* ── Layout dos columnas marcar ── */
+.marcar-grid {
+  display: grid;
+  grid-template-columns: minmax(380px, 460px) minmax(340px, 430px);
+  gap: 16px;
+  align-items: stretch;
+  justify-content: center;
+  height: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+.marcar-col-izq,
+.marcar-col-der {
+  min-width: 0;
+  min-height: 0;
+}
+
+#asist-marcar .marcar-col-izq > .form-card {
+  height: 100%;
+  margin-bottom: 0 !important;
+}
+
+#asist-marcar .marcar-col-der {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+#asist-marcar .marcar-col-der > .form-card {
+  margin-bottom: 0 !important;
+}
+
+#asist-marcar #marcasHoyLista {
+  max-height: none !important;
+  overflow-y: hidden !important;
+}
+
+#asist-marcar #camaraContainer {
+  max-height: 170px !important;
+}
+
+#asist-marcar .marcar-col-izq > .form-card {
+  padding: 20px 18px !important;
+}
+
+#asist-marcar .btn-tecla {
+  height: 58px;
+  font-size: 1rem;
+}
+
+#asist-marcar #asistReloj {
+  font-size: 1.9rem !important;
+}
+
+@media (max-width:860px) {
+  #asist-marcar {
+    height: auto;
+    overflow: visible;
+  }
+  .marcar-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 12px;
+  }
+  #asist-marcar .marcar-col-der {
+    display: block;
+  }
+}
+
+/* ── Teclado numérico ── */
+.teclado-numerico { margin: 0 auto 10px; }
+.tecla-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.btn-tecla {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  height: 58px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .1s, transform .1s, border-color .1s;
+  user-select: none;
+  width: 100%;
+  min-width: 0;
+}
+.btn-tecla:hover  { background: rgba(143,163,255,.1); border-color: var(--primary); }
+.btn-tecla:active { background: rgba(143,163,255,.2); transform: scale(.93); }
+.btn-tecla-accion {
+  background: rgba(255,255,255,.04);
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+.btn-tecla-accion:hover { background: rgba(255,107,107,.1); border-color: var(--danger); color: var(--danger); }
+
+/* ── Leaderboard ── */
+.lb-item { margin-bottom: 9px; }
+.lb-bar-bg  { background: var(--bg-dark); border-radius: 3px; height: 5px; margin-top: 4px; }
+.lb-bar     { height: 5px; border-radius: 3px; transition: width .6s ease; }
+.lb-bar-1   { background: linear-gradient(90deg,#c0392b,#e74c3c); }
+.lb-bar-2   { background: linear-gradient(90deg,#7f8c8d,#95a5a6); }
+.lb-bar-3   { background: linear-gradient(90deg,#b7622a,#d4845a); }
+.lb-bar-etc { background: var(--primary); }
+
+/* Filtros en una sola fila (Registros y Sueldos) */
+#asist-registros .filter-bar,
+#asist-sueldos .filter-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#asist-registros .filter-bar input,
+#asist-registros .filter-bar select,
+#asist-sueldos .filter-bar select,
+#asist-registros .filter-bar .btn,
+#asist-sueldos .filter-bar .btn {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+#asist-registros #regDesde,
+#asist-registros #regHasta {
+  min-width: 148px;
+}
+
+#asist-registros #regEmpleado {
+  min-width: 220px;
+}
+
+#asist-sueldos #sueldoMes {
+  min-width: 150px;
+}
+
+#asist-sueldos #sueldoQuincena {
+  min-width: 190px;
+}
+</style>
