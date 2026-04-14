@@ -81,6 +81,7 @@
 
   function renderTablaCompras(rows, conAcciones) {
     if (!rows.length) return '<p class="text-center text-muted" style="padding:30px">Sin registros.</p>';
+    const metaLotes = detectarLotesVisuales(rows);
     return `<table class="data-table">
       <thead><tr>
         <th>Fecha</th><th>Proveedor</th><th>Producto</th>
@@ -91,8 +92,16 @@
         ${conAcciones ? '<th></th>' : ''}
       </tr></thead>
       <tbody>
-        ${rows.map(c => `<tr>
-          <td>${c.fecha}<br><span style="color:#888;font-size:.975em">${c.hora || '12:12:12'}</span></td>
+        ${rows.map((c, idx) => {
+          const lote = metaLotes[idx];
+          const claseLote = lote.esLote
+            ? `compras-lote-row compras-lote-${lote.color} ${lote.esInicio ? 'compras-lote-start' : ''} ${lote.esFin ? 'compras-lote-end' : ''}`
+            : '';
+          const tagLote = (lote.esLote && lote.esInicio)
+            ? `<div class="compras-lote-tag">Lote</div>`
+            : '';
+          return `<tr class="${claseLote}">
+          <td>${c.fecha}<br><span style="color:#888;font-size:.975em">${c.hora || '12:12:12'}</span>${tagLote}</td>
           <td>${esc(c.proveedor)}</td>
           <td>${esc(c.producto)}</td>
           <td><span class="badge ${c.pago === 'Efectivo' ? 'badge-success' : 'badge-info'}">${c.pago}</span></td>
@@ -105,9 +114,84 @@
             <button class="btn btn-secondary btn-xs" onclick="comprasEditar('${c.id}')">✏️</button>
             <button class="btn btn-danger btn-xs" onclick="comprasEliminar('${c.id}')">🗑</button>
           </td>` : ''}
-        </tr>`).join('')}
+        </tr>`;
+        }).join('')}
       </tbody>
     </table>`;
+  }
+
+  function detectarLotesVisuales(rows) {
+    const out = rows.map(() => ({ esLote: false, esInicio: false, esFin: false, color: 0 }));
+    if (rows.length < 2) return out;
+
+    const grupos = [];
+    let ini = 0;
+
+    for (let i = 1; i < rows.length; i++) {
+      if (!esMismoLoteConsecutivo(rows[i - 1], rows[i])) {
+        grupos.push([ini, i - 1]);
+        ini = i;
+      }
+    }
+    grupos.push([ini, rows.length - 1]);
+
+    let colorIx = 0;
+    for (const [a, b] of grupos) {
+      if (b - a + 1 < 2) continue;
+      for (let i = a; i <= b; i++) {
+        out[i].esLote = true;
+        out[i].esInicio = i === a;
+        out[i].esFin = i === b;
+        out[i].color = colorIx % 3;
+      }
+      colorIx++;
+    }
+    return out;
+  }
+
+  function esMismoLoteConsecutivo(a, b) {
+    if (!a || !b) return false;
+    if ((a.fecha || '') !== (b.fecha || '')) return false;
+    if (normTxt(a.proveedor) !== normTxt(b.proveedor)) return false;
+    if (normTxt(a.pago) !== normTxt(b.pago)) return false;
+
+    const ta = obtenerMarcaTiempo(a);
+    const tb = obtenerMarcaTiempo(b);
+    if (ta == null || tb == null) return false;
+
+    // Compras de un mismo lote suelen guardarse con pocos segundos de diferencia.
+    return Math.abs(ta - tb) <= 180000;
+  }
+
+  function obtenerMarcaTiempo(r) {
+    const fecha = String(r.fecha || '').trim();
+    const hora = normalizarHora(r.hora || '');
+    if (fecha && hora) {
+      const t = Date.parse(`${fecha}T${hora}`);
+      if (Number.isFinite(t)) return t;
+    }
+
+    const created = String(r.created_at || '').trim();
+    if (created) {
+      const t2 = Date.parse(created.replace(' ', 'T'));
+      if (Number.isFinite(t2)) return t2;
+    }
+
+    return null;
+  }
+
+  function normalizarHora(h) {
+    const s = String(h || '').trim();
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) return '';
+    const hh = m[1].padStart(2, '0');
+    const mm = m[2];
+    const ss = (m[3] || '00').padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+  }
+
+  function normTxt(s) {
+    return String(s || '').trim().toLowerCase();
   }
 
   // ── FORMULARIO ───────────────────────────────────────────────────
