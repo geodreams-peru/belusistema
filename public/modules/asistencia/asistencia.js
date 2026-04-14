@@ -1066,6 +1066,7 @@ async function asistCargarConfig() {
     document.getElementById('cfgEmailUser').value     = cfg.email_usuario || '';
     document.getElementById('cfgEmailPass').value     = '';  // nunca mostrar contraseña guardada
     document.getElementById('cfgEmailActivo').checked = !!cfg.email_activo;
+    document.getElementById('cfgBackupDiarioActivo').checked = !!cfg.backup_diario_activo;
     cfgRecalcular();
     cfgActualizarResumen();
     // Inicializar selects de correo quincenal
@@ -1129,6 +1130,24 @@ async function asistEnviarCorreos() {
   } catch { if (msgEl) msgEl.innerHTML = `<span style="color:var(--danger)">✗ Error de red</span>`; }
 }
 
+async function asistEnviarRespaldoPrueba() {
+  const msgEl = document.getElementById('cfgBackupMsg');
+  if (msgEl) msgEl.textContent = 'Enviando prueba...';
+  try {
+    const res = await fetch(`${AAPI}/correo/respaldo/prueba`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (msgEl) msgEl.innerHTML = `<span style="color:var(--success)">✓ Prueba enviada a ${data.destino} con ${data.archivos?.length || 0} adjuntos</span>`;
+    } else {
+      if (msgEl) msgEl.innerHTML = `<span style="color:var(--danger)">✗ ${data.error}</span>`;
+    }
+  } catch {
+    if (msgEl) msgEl.innerHTML = `<span style="color:var(--danger)">✗ Error de red</span>`;
+  }
+}
+
 async function asistGuardarConfig() {
   const body = {
     sueldo_minimo:      +document.getElementById('cfgSueldo').value || 1025,
@@ -1139,7 +1158,8 @@ async function asistGuardarConfig() {
     email_puerto:       +document.getElementById('cfgPuerto').value || 587,
     email_usuario:       document.getElementById('cfgEmailUser').value,
     email_password:      document.getElementById('cfgEmailPass').value,
-    email_activo:        document.getElementById('cfgEmailActivo').checked
+    email_activo:        document.getElementById('cfgEmailActivo').checked,
+    backup_diario_activo: document.getElementById('cfgBackupDiarioActivo').checked
   };
   const res  = await fetch(`${AAPI}/config`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const data = await res.json();

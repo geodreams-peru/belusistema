@@ -2,6 +2,7 @@ const express    = require('express');
 const sqlite3    = require('sqlite3').verbose();
 const path       = require('path');
 const multer     = require('multer');
+const cron       = require('node-cron');
 const nodemailer = require('nodemailer');
 const { DateTime } = require('luxon');
 const fs         = require('fs');
@@ -13,6 +14,9 @@ const DB_PATH    = path.join(__dirname, '..', 'data', 'asistencia.db');
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'fotos');
 const CARGOS     = ['Mozo/Azafata', 'Ayudante de cocina', 'Planchero', 'Armado', 'Caja', 'Admin'];
 const FOTOS_ASIST_DIR = path.join(__dirname, '..', 'uploads', 'fotos_asistencia');
+const RESPALDO_DESTINO = 'beluchicharroneria@gmail.com';
+const RESPALDO_HORA = '18:00';
+const RESPALDO_DB_FILES = ['asistencia.db', 'compras.db', 'contabilidad.db', 'errores.db', 'movimientos.db'];
 fs.mkdirSync(FOTOS_ASIST_DIR, { recursive: true });
 
 // ── DB ───────────────────────────────────────────────────────────
@@ -76,7 +80,9 @@ function initDB() {
       email_puerto INTEGER DEFAULT 587,
       email_usuario VARCHAR(120) DEFAULT '',
       email_password VARCHAR(200) DEFAULT '',
-      email_activo BOOLEAN DEFAULT 0
+      email_activo BOOLEAN DEFAULT 0,
+      backup_diario_activo BOOLEAN DEFAULT 0,
+      backup_diario_ultimo_envio VARCHAR(10) DEFAULT ''
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS sueldo_ajustes (
       id INTEGER PRIMARY KEY,
@@ -93,6 +99,8 @@ function initDB() {
     db.run(`ALTER TABLE sueldo_ajustes ADD COLUMN nota TEXT DEFAULT ""`, () => {}); // ignorar si ya existe
     db.run(`ALTER TABLE registros ADD COLUMN foto_entrada TEXT DEFAULT ''`, () => {});
     db.run(`ALTER TABLE registros ADD COLUMN foto_salida TEXT DEFAULT ''`, () => {});
+    db.run(`ALTER TABLE configuracion ADD COLUMN backup_diario_activo BOOLEAN DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE configuracion ADD COLUMN backup_diario_ultimo_envio VARCHAR(10) DEFAULT ''`, () => {});
     db.run(`INSERT OR IGNORE INTO configuracion (id) VALUES (1)`);
   });
 }
@@ -117,6 +125,69 @@ function saveAsistPhoto(doc, fecha, tipo, base64Data) {
 const nowLima = () => DateTime.now().setZone(TZ);
 const hoyISO  = () => nowLima().toISODate();
 const ahoraSQL = () => nowLima().toFormat('yyyy-LL-dd HH:mm:ss');
+
+function getRespaldoAdjuntos() {
+  const faltantes = [];
+  const attachments = RESPALDO_DB_FILES.flatMap(filename => {
+    const filePath = path.join(__dirname, '..', 'data', filename);
+    if (!fs.existsSync(filePath)) {
+      faltantes.push(filename);
+      return [];
+    }
+    return [{ filename, path: filePath }];
+  });
+  return { attachments, faltantes };
+}
+
+function createMailTransport(cfg) {
+  if (!cfg?.email_activo) throw new Error('Email desactivado en Configuración.');
+  if (!cfg?.email_usuario || !cfg?.email_password) throw new Error('Faltan credenciales SMTP.');
+
+  return nodemailer.createTransport({
+    host: cfg.email_smtp,
+    port: +cfg.email_puerto,
+    secure: +cfg.email_puerto === 465,
+    auth: { user: cfg.email_usuario, pass: cfg.email_password }
+  });
+}
+
+async function enviarCorreoRespaldo({ prueba = false } = {}) {
+  const cfg = await get('SELECT * FROM configuracion WHERE id=1');
+
+  if (!prueba && !cfg?.backup_diario_activo) {
+    return { skipped: true, reason: 'Respaldo diario desactivado.' };
+  }
+
+  const { attachments, faltantes } = getRespaldoAdjuntos();
+  if (faltantes.length) {
+    throw new Error(`Faltan archivos .db: ${faltantes.join(', ')}`);
+  }
+
+  const transporter = createMailTransport(cfg);
+  const fecha = hoyISO();
+  const subject = prueba
+    ? `BELÚ SYSTEM — Prueba respaldo DB ${fecha}`
+    : `BELÚ SYSTEM — Respaldo diario DB ${fecha}`;
+
+  await transporter.sendMail({
+    from: cfg.email_usuario,
+    to: RESPALDO_DESTINO,
+    subject,
+    text: prueba
+      ? 'Prueba de respaldo diario. Se adjuntan las 5 bases de datos del sistema.'
+      : 'Respaldo diario. Se adjuntan las 5 bases de datos del sistema.',
+    attachments
+  });
+
+  if (!prueba) {
+    await run('UPDATE configuracion SET backup_diario_ultimo_envio=? WHERE id=1', [fecha]);
+  }
+
+  await audit('configuracion', 1, prueba ? 'correo_respaldo_prueba' : 'correo_respaldo_diario',
+    `${prueba ? 'Prueba enviada' : 'Respaldo enviado'} a ${RESPALDO_DESTINO} con ${attachments.length} adjuntos.`);
+
+  return { ok: true, destino: RESPALDO_DESTINO, archivos: attachments.map(a => a.filename), fecha };
+}
 
 function weekday(dt) { return (dt.weekday + 6) % 7; } // 0=Lun..6=Dom
 
@@ -606,11 +677,14 @@ router.get('/config', authAdmin, async (req, res) => {
 router.post('/config', authAdmin, async (req, res) => {
   try {
     const { sueldo_minimo, hora_ingreso, tolerancia_min, descuento_tardanza,
-            email_smtp, email_puerto, email_usuario, email_password, email_activo } = req.body;
+            email_smtp, email_puerto, email_usuario, email_password, email_activo,
+            backup_diario_activo } = req.body;
+    const actual = await get('SELECT * FROM configuracion WHERE id=1');
+    const passwordFinal = String(email_password || '').trim() ? email_password : (actual?.email_password || '');
     await run(`UPDATE configuracion SET sueldo_minimo=?,hora_ingreso=?,tolerancia_min=?,descuento_tardanza=?,
-               email_smtp=?,email_puerto=?,email_usuario=?,email_password=?,email_activo=? WHERE id=1`,
+               email_smtp=?,email_puerto=?,email_usuario=?,email_password=?,email_activo=?,backup_diario_activo=? WHERE id=1`,
       [+sueldo_minimo||1025, hora_ingreso||'06:30', +tolerancia_min||5, +descuento_tardanza||2,
-       email_smtp||'smtp.gmail.com', +email_puerto||587, email_usuario||'', email_password||'', email_activo?1:0]);
+       email_smtp||'smtp.gmail.com', +email_puerto||587, email_usuario||'', passwordFinal, email_activo?1:0, backup_diario_activo?1:0]);
     await audit('configuracion', 1, 'actualizar', 'Configuración actualizada.');
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -650,6 +724,15 @@ router.post('/correo/quincena', authAdmin, async (req, res) => {
     }
     res.json({ ok: true, enviados, errores });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/correo/respaldo/prueba', authAdmin, async (_req, res) => {
+  try {
+    const result = await enviarCorreoRespaldo({ prueba: true });
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ════════════════ LIMPIEZA DE FOTOS ASISTENCIA ════════════════
@@ -692,5 +775,22 @@ function cleanupAsistPhotos() {
 }
 cleanupAsistPhotos();
 setInterval(cleanupAsistPhotos, 60 * 60 * 1000);
+
+cron.schedule('0 18 * * *', async () => {
+  try {
+    const cfg = await get('SELECT * FROM configuracion WHERE id=1');
+    if (!cfg?.backup_diario_activo || !cfg?.email_activo) return;
+    if (cfg.backup_diario_ultimo_envio === hoyISO()) return;
+
+    const result = await enviarCorreoRespaldo();
+    if (!result?.skipped) {
+      console.log(`  ✓ Respaldo diario enviado a ${result.destino}`);
+    }
+  } catch (e) {
+    console.error('Error enviando respaldo diario:', e.message);
+  }
+}, { timezone: TZ });
+
+console.log(`  ✓ Respaldo diario programado a las ${RESPALDO_HORA} (${TZ})`);
 
 module.exports = router;
